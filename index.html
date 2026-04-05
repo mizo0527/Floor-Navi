@@ -168,6 +168,13 @@
       display:inline-block;
       vertical-align:middle;
     }
+<div id="coordBox" style="margin-top:10px; background:#fff; border-radius:16px; box-shadow:0 4px 12px rgba(0,0,0,.08); padding:12px 14px; font-size:14px; line-height:1.6;">
+  <strong>座標取得モード</strong><br>
+  地図をタップすると座標が表示されます。<br>
+  <span id="coordText">left: -- / top: --</span>
+</div>
+
+    
 
     .panel{
       background:var(--card);
@@ -416,6 +423,22 @@
 
     // ルート
     document.getElementById("routeLine").setAttribute("points", routes[p] || routes.akahoshi);
-  </script>
+ <script>
+  const mapWrap = document.getElementById("mapWrap");
+  const coordText = document.getElementById("coordText");
+
+  mapWrap.addEventListener("click", (e) => {
+    const rect = mapWrap.getBoundingClientRect();
+
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    const leftPercent = ((x / rect.width) * 100).toFixed(1);
+    const topPercent = ((y / rect.height) * 100).toFixed(1);
+
+    coordText.textContent = `left: ${leftPercent}% / top: ${topPercent}%`;
+    console.log(`left: ${leftPercent}%, top: ${topPercent}%`);
+  });
+</script>
 </body>
 </html>
