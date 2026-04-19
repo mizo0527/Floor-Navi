@@ -1,444 +1,118 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <title>フロアナビ</title>
-  <style>
-    :root{
-      --bg:#f3f3f3;
-      --card:#ffffff;
-      --text:#111;
-      --muted:#666;
-      --blue:#2d7dd2;
-      --red:#e53935;
-      --yellow:#f1c94a;
-      --btn-blue:#89c7f2;
-      --btn-orange:#f4a23a;
-      --shadow:0 8px 20px rgba(0,0,0,.12);
-      --radius:22px;
-    }
-
-    *{box-sizing:border-box}
-    body{
-      margin:0;
-      background:var(--bg);
-      color:var(--text);
-      font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic","Noto Sans JP",sans-serif;
-    }
-
-    .app{
-      width:min(100%,430px);
-      margin:0 auto;
-      min-height:100vh;
-      padding:14px 12px 18px;
-    }
-
-    .title{
-      text-align:center;
-      font-size:30px;
-      font-weight:800;
-      margin:8px 0 12px;
-      letter-spacing:.02em;
-    }
-
-    .map-card{
-      background:var(--card);
-      border-radius:26px;
-      padding:10px;
-      box-shadow:var(--shadow);
-      overflow:hidden;
-    }
-
-    .map-wrap{
-      position:relative;
-      width:100%;
-      aspect-ratio: 3 / 5.2;
-      border-radius:18px;
-      overflow:hidden;
-      background:#fff;
-      border:1px solid #ddd;
-    }
-
-    .map-bg{
-      position:absolute;
-      inset:0;
-      width:100%;
-      height:100%;
-      object-fit:cover;
-      object-position:center;
-      display:block;
-    }
-
-    .route-layer{
-      position:absolute;
-      inset:0;
-      pointer-events:none;
-      z-index:2;
-    }
-
-    .point{
-      position:absolute;
-      z-index:3;
-      transform:translate(-50%,-50%);
-    }
-
-    .current-dot{
-      width:24px;
-      height:24px;
-      border-radius:50%;
-      background:var(--blue);
-      box-shadow:0 0 0 8px rgba(45,125,210,.18);
-      border:2px solid #fff;
-    }
-
-    .dest-pin{
-      width:30px;
-      height:30px;
-      background:var(--red);
-      border-radius:50% 50% 50% 0;
-      transform:translate(-50%,-50%) rotate(-45deg);
-      box-shadow:0 4px 10px rgba(0,0,0,.18);
-      position:absolute;
-    }
-    .dest-pin::after{
-      content:"";
-      position:absolute;
-      width:12px;
-      height:12px;
-      border-radius:50%;
-      background:#fff;
-      top:9px;
-      left:9px;
-    }
-
-    .bubble{
-      position:absolute;
-      z-index:4;
-      transform:translate(-50%,-50%);
-      background:rgba(255,255,255,.96);
-      border-radius:999px;
-      padding:8px 12px;
-      box-shadow:var(--shadow);
-      font-size:22px;
-      line-height:1;
-      white-space:nowrap;
-    }
-
-    .label{
-      position:absolute;
-      z-index:4;
-      transform:translate(-50%,-50%);
-      background:rgba(255,255,255,.96);
-      border-radius:999px;
-      padding:5px 10px;
-      box-shadow:0 4px 10px rgba(0,0,0,.10);
-      font-size:14px;
-      font-weight:800;
-      white-space:nowrap;
-    }
-
-    .qr-point{
-      width:20px;
-      height:20px;
-      border-radius:50%;
-      background:var(--yellow);
-      border:2px solid rgba(0,0,0,.08);
-      box-shadow:0 2px 6px rgba(0,0,0,.18);
-    }
-
-    .legend{
-      display:flex;
-      justify-content:center;
-      gap:18px;
-      flex-wrap:wrap;
-      margin:10px 0 2px;
-      font-size:12px;
-      color:#555;
-    }
-
-    .legend span{
-      display:flex;
-      align-items:center;
-      gap:6px;
-    }
-
-    .legend .dot{
-      width:14px;height:14px;border-radius:50%;
-      display:inline-block;
-      vertical-align:middle;
-    }
-<div id="coordBox" style="margin-top:10px; background:#fff; border-radius:16px; box-shadow:0 4px 12px rgba(0,0,0,.08); padding:12px 14px; font-size:14px; line-height:1.6;">
-  <strong>座標取得モード</strong><br>
-  地図をタップすると座標が表示されます。<br>
-  <span id="coordText">left: -- / top: --</span>
-</div>
-
-    
-
-    .panel{
-      background:var(--card);
-      margin-top:14px;
-      border-radius:26px;
-      box-shadow:var(--shadow);
-      padding:16px 16px 14px;
-    }
-
-    .meta{
-      display:grid;
-      gap:10px;
-      margin-bottom:12px;
-    }
-
-    .row{
-      display:flex;
-      align-items:flex-start;
-      gap:10px;
-      font-size:18px;
-      font-weight:800;
-      line-height:1.45;
-    }
-
-    .row .icon{
-      width:28px;
-      flex:0 0 28px;
-      text-align:center;
-    }
-
-    .guide{
-      font-size:18px;
-      font-weight:800;
-      line-height:1.6;
-      margin:8px 0 10px;
-    }
-
-    .help{
-      font-size:14px;
-      color:#333;
-      line-height:1.5;
-      margin-bottom:12px;
-    }
-
-    .buttons{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:10px;
-    }
-
-    .btn{
-      border:none;
-      border-radius:18px;
-      padding:14px 12px;
-      font-size:16px;
-      font-weight:800;
-      color:#fff;
-      box-shadow:0 4px 10px rgba(0,0,0,.12);
-    }
-
-    .btn.blue{ background:var(--btn-blue); }
-    .btn.orange{ background:var(--btn-orange); }
-
-    @media (max-width:360px){
-      .title{font-size:28px}
-      .row,.guide{font-size:16px}
-      .btn{font-size:15px}
-    }
-  <style>
-.map-wrap{
-  position: relative;
-  width: 100%;
-  aspect-ratio: 3 / 5.2;
-  overflow: hidden;
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>スリルカート試作</title>
+<style>
+html,body{
+  margin:0; padding:0; overflow:hidden; background:#000;
 }
-.map-bg{
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
+#game{
+  position:relative;
+  width:100vw; height:100vh;
+  overflow:hidden;
+}
+
+/* ===== 背景レイヤー ===== */
+.layer{
+  position:absolute;
+  width:100%; height:200%;
+  background-repeat:repeat-y;
+  background-position:0 0;
+  image-rendering:pixelated;
+}
+
+/* 遠景（ほぼ止める） */
+#bgFar{
+  background:url('assets/bg_far.png') no-repeat center top;
+  background-size:cover;
+  z-index:1;
+  filter:blur(1.5px) brightness(0.8);
+}
+
+/* 棚 */
+#bgShelfL, #bgShelfR{
+  width:30%;
+  background-size:cover;
+  z-index:2;
+  opacity:0.95;
+}
+#bgShelfL{
+  left:0;
+  background:url('assets/bg_shelf_left.png') no-repeat left top;
+}
+#bgShelfR{
+  right:0;
+  background:url('assets/bg_shelf_right.png') no-repeat right top;
+}
+
+/* 床（主役） */
+#bgFloor{
+  background:url('assets/bg_floor.png') repeat-y center;
+  background-size:cover;
+  z-index:0;
+}
+
+/* ===== UI ===== */
+#stick{
+  position:absolute;
+  left:20px; bottom:20px;
+  width:120px;
+  z-index:5;
+}
+#btn{
+  position:absolute;
+  right:20px; bottom:20px;
+  width:100px;
+  z-index:5;
 }
 </style>
-  
 </head>
 <body>
-  <div class="app">
-    <div class="title">フロアナビ</div>
 
-    <div class="map-card">
-      <div class="map-wrap" id="mapWrap">
-        <!-- 実マップ画像。ファイル名を合わせる -->
-       <img src="layout-map.jpg" alt="店内マップ" class="map-bg">
-        
-        <!-- ルート -->
-        <svg class="route-layer" viewBox="0 0 100 160" preserveAspectRatio="none">
-          <polyline id="routeLine"
-            fill="none"
-            stroke="#2d7dd2"
-            stroke-width="1.8"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-dasharray="0.1 4.2"
-            points="">
-          </polyline>
-        </svg>
+<div id="game">
+  <div id="bgFloor" class="layer"></div>
+  <div id="bgFar" class="layer"></div>
+  <div id="bgShelfL" class="layer"></div>
+  <div id="bgShelfR" class="layer"></div>
 
-        <!-- QR設置ポイント（固定表示） -->
-       <!-- QR設置ポイント（固定表示） -->
-<div class="point qr-point" style="left:74%; top:86%;" title="赤星"></div>
-<div class="point qr-point" style="left:66.5%; top:46%;" title="鳥谷"></div>
-<div class="point qr-point" style="left:62.5%; top:31%;" title="金本"></div>
-<div class="point qr-point" style="left:55.5%; top:18%;" title="今岡"></div>
-<div class="point qr-point" style="left:50.5%; top:14%;" title="濱中"></div>
-        
-        <!-- 現在地 -->
-        <div class="point current-dot" id="currentDot"></div>
-        <div class="label" id="currentLabel">現在地</div>
+  <img id="stick" src="assets/joystick.png">
+  <img id="btn" src="assets/red_button.png">
+</div>
 
-        <!-- 目的地 -->
-        <div class="dest-pin" id="destPin"></div>
-        <div class="bubble" id="destBubble">🧦</div>
-      </div>
+<script>
+let floorY = 0;
+let shelfY = 0;
+let farY = 0;
 
-      <div class="legend">
-        <span><i class="dot" style="background:#2d7dd2"></i>現在地</span>
-        <span>📍 目的地</span>
-        <span><i class="dot" style="background:#f1c94a"></i>QR設置ポイント</span>
-      </div>
-    </div>
+let speed = 2;
+let accel = false;
 
-    <div class="panel">
-      <div class="meta">
-        <div class="row">
-          <div class="icon">🗺️</div>
-          <div>現在地：<span id="currentText">パジャマ前</span></div>
-        </div>
-        <div class="row">
-          <div class="icon">🧦</div>
-          <div>目的地：<span id="destText">靴下売場</span></div>
-        </div>
-      </div>
+/* ===== 加速ボタン ===== */
+const btn = document.getElementById("btn");
+btn.addEventListener("touchstart",()=>accel=true);
+btn.addEventListener("touchend",()=>accel=false);
+btn.addEventListener("mousedown",()=>accel=true);
+btn.addEventListener("mouseup",()=>accel=false);
 
-      <div class="guide" id="guideText">ここを右に曲がって、進んでください →</div>
-      <div class="help">迷ったら近くのQRを読み取ってください</div>
+/* ===== ループ ===== */
+function loop(){
+  let boost = accel ? 6 : 0;
 
-      <div class="buttons">
-        <button class="btn blue" type="button">📷 カメラで確認</button>
-        <button class="btn orange" type="button">🧊 3Dで確認</button>
-      </div>
-    </div>
-  </div>
+  floorY += speed + boost;
+  shelfY += (speed + boost)*0.5;
+  farY += (speed + boost)*0.1;
 
-  <script>
-    // URL例:
-    // ?p=akahoshi&d=socks
+  document.getElementById("bgFloor").style.backgroundPosition = `0 ${floorY}px`;
+  document.getElementById("bgShelfL").style.backgroundPosition = `0 ${shelfY}px`;
+  document.getElementById("bgShelfR").style.backgroundPosition = `0 ${shelfY}px`;
+  document.getElementById("bgFar").style.backgroundPosition = `0 ${farY}px`;
 
-    const params = new URLSearchParams(window.location.search);
-    const p = params.get("p") || "akahoshi";
-    const d = params.get("d") || "socks";
-
-    // 実マップ用の地点定義
-    // x, y は mapWrap の % 位置
-    const points = {
-      akahoshi: {
-        name: "中央通路 南",
-        x: 76, y: 82,
-        guideByDest: {
-          socks: "ここから直進してください。右側の通路を進みます。"
-        }
-      },
-      tori: {
-        name: "中央通路 中ほど",
-        x: 76, y: 46,
-        guideByDest: {
-          socks: "そのまま直進してください。この先の角で左に進みます。"
-        }
-      },
-      kanemoto: {
-        name: "北側通路 手前",
-        x: 76, y: 31,
-        guideByDest: {
-          socks: "この先の角で左に曲がってください。"
-        }
-      },
-      imaoka: {
-        name: "北側通路 角",
-        x: 62, y: 18,
-        guideByDest: {
-          socks: "この角を左に曲がってください。曲がったあと、そのまま直進してください。"
-        }
-      },
-      hamanaka: {
-        name: "目的地付近",
-        x: 57, y: 14,
-        guideByDest: {
-          socks: "目的地はこの先です。おつかれさまでした。"
-        }
-      }
-    };
-
-    // 目的地定義
-    const destinations = {
-      socks: {
-        name: "靴下売場",
-        icon: "🧦",
-        x: 57, y: 14
-      }
-    };
-
-    // ルート線（地点ごと）
-    const routes = {
-      akahoshi: "76,82 76,31 62,31 62,18 57,14",
-      tori:     "76,46 76,31 62,31 62,18 57,14",
-      kanemoto: "76,31 62,31 62,18 57,14",
-      imaoka:   "62,18 57,14",
-      hamanaka: "57,14"
-    };
-
-    const current = points[p] || points.akahoshi;
-    const dest = destinations[d] || destinations.socks;
-
-    const currentDot = document.getElementById("currentDot");
-    const currentLabel = document.getElementById("currentLabel");
-    const destPin = document.getElementById("destPin");
-    const destBubble = document.getElementById("destBubble");
-
-    function place(el, x, y, dx = 0, dy = 0) {
-      el.style.left = `calc(${x}% + ${dx}px)`;
-      el.style.top  = `calc(${y}% + ${dy}px)`;
-    }
-
-    // 現在地
-    place(currentDot, current.x, current.y);
-    place(currentLabel, current.x, current.y, 28, 0);
-
-    // 目的地
-    place(destPin, dest.x, dest.y);
-    place(destBubble, dest.x, dest.y, 18, -34);
-    destBubble.textContent = dest.icon;
-
-    // テキスト
-    document.getElementById("currentText").textContent = current.name;
-    document.getElementById("destText").textContent = dest.name;
-    document.getElementById("guideText").textContent =
-      current.guideByDest[d] || "目的地に向かって進んでください。";
-
-    // ルート
-    document.getElementById("routeLine").setAttribute("points", routes[p] || routes.akahoshi);
- <script>
-  const mapWrap = document.getElementById("mapWrap");
-  const coordText = document.getElementById("coordText");
-
-  mapWrap.addEventListener("click", (e) => {
-    const rect = mapWrap.getBoundingClientRect();
-
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    const leftPercent = ((x / rect.width) * 100).toFixed(1);
-    const topPercent = ((y / rect.height) * 100).toFixed(1);
-
-    coordText.textContent = `left: ${leftPercent}% / top: ${topPercent}%`;
-    console.log(`left: ${leftPercent}%, top: ${topPercent}%`);
-  });
+  requestAnimationFrame(loop);
+}
+loop();
 </script>
+
 </body>
 </html>
